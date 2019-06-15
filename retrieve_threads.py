@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 import json
 from json import JSONDecodeError
+from db_connector import Thread
 
 driver = webdriver.Chrome('C:/chromedriver')
 
@@ -46,13 +47,15 @@ refresh_delay = 1
 
 
 def check_page_load(by, delay, element_id):
-    while True:
+    count = 0
+    while count < 10:
         try:
             my_elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((by, element_id)))
             print(element_id, "Page is ready!")
             break
         except TimeoutException:
             print(element_id, 'Page is not yet ready, checking again...')
+        count += 1
 
 
 check_page_load(By.ID, refresh_delay, 'my-courses')
@@ -78,6 +81,10 @@ for request in driver.requests:
             print('Unhandled Exception')
 
 print(json_data)
+threads = json_data['discussion_data']
+
+results = Thread.upsert_threads(threads)
+print('Results =', results)
 
 driver.requests.clear()
 
