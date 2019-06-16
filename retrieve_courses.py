@@ -1,5 +1,9 @@
 import authenticate
 import requests
+from pprint import pprint
+from db_connector import Course
+
+# from db_connector
 
 cookies = authenticate.get_cookies()
 
@@ -14,7 +18,8 @@ while True:
     r = requests.get(next_url, cookies=cookies)
     response_data = r.json()
     courses = response_data['objects']['results']
-    for course in courses:
-        print(course['title'])
+    result = Course.upsert_courses(courses)
+    if result:
+        print('Saved/Updated', courses.__len__(), ' Courses')
     next_url = response_data['objects']['next']
     count += 1
