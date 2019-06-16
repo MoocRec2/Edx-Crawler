@@ -8,6 +8,7 @@ from selenium.common.exceptions import ElementClickInterceptedException
 import json
 from json import JSONDecodeError
 from db_connector import Thread
+from pprint import pprint
 
 driver = webdriver.Chrome('C:/chromedriver')
 
@@ -27,7 +28,8 @@ for cookie in cookies:
     cookies_dict[cookie.get('name')] = cookie.get('value')
 
 # Get Discussion URL from Course URL
-course_url = 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'
+# course_url = 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'
+course_url = 'https://courses.edx.org/courses/course-v1:UCSanDiegoX+DSE200x+1T2019a/course/'
 # course_url = 'https://courses.edx.org/courses/course-v1:UPValenciaX+TGV201x.2+2T2019/course/'
 course_url_components = course_url.split('/')
 course_url_components.reverse()
@@ -92,7 +94,9 @@ thread_list.extend(threads)
 num_of_pages = json_data['num_pages']
 current_page = json_data['page']
 
-while current_page != num_of_pages:
+print('Total No. of Pages:', num_of_pages)
+while current_page != num_of_pages and current_page <= 10:
+    print('Current Page=', current_page)
     del driver.requests
 
     forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
@@ -108,7 +112,6 @@ while current_page != num_of_pages:
             time.sleep(0.5)
             pass
 
-    # count = 0
     while True:
         forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
         threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
@@ -121,7 +124,7 @@ while current_page != num_of_pages:
     for request in driver.requests:
         try:
             if 'application/json' in request.response.headers['Content-Type']:
-                print(request.path, request.response.headers['Content-Type'])
+                # print(request.path, request.response.headers['Content-Type'])
                 response_body = request.response.body.decode()
                 break
         except:
@@ -129,20 +132,23 @@ while current_page != num_of_pages:
 
     try:
         json_data = json.loads(response_body)
-        print('JSON Data =', json_data)
         threads = json_data['discussion_data']
         Thread.upsert_threads(threads)
         thread_list.extend(threads)
     except JSONDecodeError:
         pass
+    except KeyError:
+        print('KeyError: Response Data displayed below')
+        pprint(json_data)
 
     current_page = json_data['page']
 
-print('All Threads Have Been Loaded to the UI')
+print('All Threads Have Been Loaded to the UI, Iterations=', current_page)
 
 forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
 thread_elems = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
 
+print('Starting to collect detailed thread information')
 # Iterating through the Elements
 new_thread_info = []
 print('Thread Element Count =', thread_elems.__len__())
@@ -150,13 +156,19 @@ print('Thread List Count =', thread_list.__len__())
 for thread_elem in thread_elems:
     thread_title = thread_elem.find_element_by_class_name('forum-nav-thread-title').text
 
+    # found = False
     for thread in thread_list:
         if thread_title == thread['title']:
             found_thread = thread
+            # found = True
+            print('Match Found')
             break
+    # if not found:
+    #     continue
 
     if found_thread['comments_count'] == 0:
-        break
+        print('no comments')
+        continue
 
     del driver.requests
     thread_elem.click()
@@ -182,5 +194,4 @@ for thread_elem in thread_elems:
 print('Thread Information Collected, count=', new_thread_info.__len__())
 Thread.upsert_threads(new_thread_info)
 
-time.sleep(10)
-driver.quit()
+# driver.quit()

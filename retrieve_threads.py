@@ -27,7 +27,8 @@ for cookie in cookies:
     cookies_dict[cookie.get('name')] = cookie.get('value')
 
 # Get Discussion URL from Course URL
-course_url = 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'
+# course_url = 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'
+course_url = 'https://courses.edx.org/courses/course-v1:UPValenciaX+TGV201x.2+2T2019/course/'
 course_url_components = course_url.split('/')
 course_url_components.reverse()
 index = 0
