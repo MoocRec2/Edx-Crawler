@@ -83,53 +83,59 @@ for request in driver.requests:
 
 print(json_data)
 threads = json_data['discussion_data']
-
 results = Thread.upsert_threads(threads)
-print('Results =', results)
 
-del driver.requests
-print('REquests COunt after clearing=', driver.requests.__len__())
+num_of_pages = json_data['num_pages']
+current_page = json_data['page']
 
-forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
-threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
-thread_count = threads.__len__()
-print('Thread Count=', thread_count)
+while current_page != num_of_pages:
+    del driver.requests
+    print('Requests Count after clearing=', driver.requests.__len__())
 
-while True:
-    try:
-        load_more_btn = driver.find_element_by_class_name('forum-nav-load-more-link')
-        load_more_btn.click()
-        break
-    except ElementClickInterceptedException:
-        time.sleep(0.5)
-        pass
-
-# count = 0
-while True:
     forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
     threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
-    new_thread_count = threads.__len__()
-    if new_thread_count != thread_count:
-        break
-    print('Threads not yet loaded, trying again...')
-    time.sleep(1)
+    thread_count = threads.__len__()
+    print('Thread Count=', thread_count)
 
-for request in driver.requests:
-    try:
-        if 'application/json' in request.response.headers['Content-Type']:
-            print(request.path, request.response.headers['Content-Type'])
-            response_body = request.response.body.decode()
+    while True:
+        try:
+            load_more_btn = driver.find_element_by_class_name('forum-nav-load-more-link')
+            load_more_btn.click()
             break
-    except:
+        except ElementClickInterceptedException:
+            time.sleep(0.5)
+            pass
+
+    # count = 0
+    while True:
+        forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
+        threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
+        new_thread_count = threads.__len__()
+        if new_thread_count != thread_count:
+            break
+        print('Threads not yet loaded, trying again...')
+        time.sleep(1)
+
+    for request in driver.requests:
+        try:
+            if 'application/json' in request.response.headers['Content-Type']:
+                print(request.path, request.response.headers['Content-Type'])
+                response_body = request.response.body.decode()
+                break
+        except:
+            pass
+
+    try:
+        json_data = json.loads(response_body)
+        print('JSON Data =', json_data)
+        threads = json_data['discussion_data']
+        Thread.upsert_threads(threads)
+    except JSONDecodeError:
         pass
 
-try:
-    json_data = json.loads(response_body)
-    print('JSON Data =', json_data)
-    threads = json_data['discussion_data']
-    Thread.upsert_threads(threads)
-except JSONDecodeError:
-    pass
+    current_page = json_data['page']
+
+print('All Done')
 
 time.sleep(10)
 driver.quit()
