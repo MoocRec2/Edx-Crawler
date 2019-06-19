@@ -31,6 +31,40 @@ class Thread:
             print('An Error Occurred')
             return False
 
+    @staticmethod
+    def get_discussion_threads_with_responses(course_id):
+        try:
+            results = database.threads.find(
+                {
+                    'course_id': course_id,
+                    'thread_type': 'discussion',
+                    '$or': [
+                        {'children': {'$exists': 'true'}},
+                        {'non_endorsed_responses': {'$exists': 'true'}}
+                    ]
+                }
+            ).limit(100)
+            return results
+        except ServerSelectionTimeoutError:
+            print('Error Connecting to Database')
+            return
+
+    @staticmethod
+    def get_sentiment_analyzed_threads():
+        try:
+            results = database.Threads.find({
+                'course_id': 'course-v1:UCSanDiegoX+DSE200x+1T2019a',
+                'thread_type': 'discussion',
+                '$or': [
+                    {'children': {'$exists': 'true'}},
+                    {'non_endorsed_responses': {'$exists': 'true'}}
+                ],
+                '$and': [{'is_sentiment_analyzed': {'$exists': 'true'}}, {'sentiment_score': {'$exists': 'true'}}]
+            }, {'is_sentiment_analyzed': 1, 'sentiment_score': 1}).sort({'sentiment_score': -1})
+            return results
+        except:
+            return []
+
 
 class Course:
 
@@ -46,3 +80,12 @@ class Course:
         except:
             print('An Error Occurred')
             return False
+
+    @staticmethod
+    def get_course(course_key):
+        try:
+            courses = database.courses.find({'key': course_key})
+            return courses[0]
+        except:
+            return None
+            pass
