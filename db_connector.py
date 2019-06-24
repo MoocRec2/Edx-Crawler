@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
-client = MongoClient('mongodb://forum_analyzer:admin123@ds157901.mlab.com:57901/moocrecv2')
+# client = MongoClient('mongodb://forum_analyzer:admin123@ds157901.mlab.com:57901/moocrecv2')
+client = MongoClient('mongodb://localhost:27017/moocrecv2')
 
 database = client.moocrecv2
 
@@ -86,6 +87,15 @@ class Course:
         try:
             courses = database.courses.find({'key': course_key})
             return courses[0]
+        except:
+            return None
+            pass
+
+    @staticmethod
+    def get_courses():
+        try:
+            courses = database.courses.find({'platform': 0})
+            return courses
         except:
             return None
             pass
