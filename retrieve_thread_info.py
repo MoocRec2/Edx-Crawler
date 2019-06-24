@@ -15,6 +15,7 @@ def retrieve_thread_info(course_url):
     driver = webdriver.Chrome('C:/chromedriver')
 
     # Sign in
+    print('Authenticating')
     driver.get('https://courses.edx.org/login')
     email_input = driver.find_element_by_name("email")
     password_input = driver.find_element_by_name("password")
@@ -22,6 +23,7 @@ def retrieve_thread_info(course_url):
     password_input.send_keys("nvidia1024")
     login_button = driver.find_element_by_class_name('login-button')
     login_button.click()
+    print('Successfully Authenticated')
 
     # Get Cookies
     cookies = driver.get_cookies()
@@ -93,6 +95,7 @@ def retrieve_thread_info(course_url):
     current_page = json_data['page']
 
     # print('Total No. of Pages:', num_of_pages)
+    print('Retrieving Detailed Information')
     while current_page != num_of_pages and current_page <= 10:
         # print('Current Page=', current_page)
         del driver.requests
