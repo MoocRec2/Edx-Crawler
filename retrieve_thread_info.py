@@ -170,7 +170,13 @@ def retrieve_thread_info(course_url):
             continue
 
         del driver.requests
-        thread_elem.click()
+        while True:
+            try:
+                thread_elem.click()
+                break
+            except:
+                print('Exception Caught: Element Not Clickable, Retrying')
+                time.sleep(1)
 
         while True:
             try:
