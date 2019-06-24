@@ -139,7 +139,12 @@ def retrieve_thread_info(course_url):
             print('KeyError: Response Data displayed below')
             pprint(json_data)
 
-        current_page = json_data['page']
+        try:
+            current_page = json_data['page']
+            print('Current Page=', current_page)
+        except:
+            pprint(json_data)
+            break
 
     # print('All Threads Have Been Loaded to the UI, Iterations=', current_page)
 
@@ -152,7 +157,10 @@ def retrieve_thread_info(course_url):
     # print('Thread Element Count =', thread_elems.__len__())
     # print('Thread List Count =', thread_list.__len__())
     print('Total No. of Threads:', thread_list.__len__())
+    demo_count = 0
     for thread_elem in thread_elems:
+        if demo_count >= 10:
+            break
         thread_title = thread_elem.find_element_by_class_name('forum-nav-thread-title').text
 
         # found = False
@@ -195,10 +203,11 @@ def retrieve_thread_info(course_url):
                     break
             except:
                 print('Exception Occurred, parsing as JSON')
+        demo_count += 1
 
     print('No. of Threads which contain comments:', new_thread_info.__len__())
     db_action_status = Thread.upsert_threads(new_thread_info)
     if db_action_status:
-        print('Information has been saved to the database')
+        print('Detailed Thread Info. has been saved to the database')
 
     driver.quit()
