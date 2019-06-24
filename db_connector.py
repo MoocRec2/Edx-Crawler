@@ -99,3 +99,19 @@ class Course:
         except:
             return None
             pass
+
+
+class Subject:
+
+    @staticmethod
+    def upsert_subjects(subjects):
+        try:
+            for subject in subjects:
+                database.subjects.update_one({'key': subject['uuid']}, {"$set": subject}, upsert=True)
+            return True
+        except ServerSelectionTimeoutError:
+            print('Error Connecting to Database')
+            return False
+        except:
+            print('An Error Occurred')
+            return False
