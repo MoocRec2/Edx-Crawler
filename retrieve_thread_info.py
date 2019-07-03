@@ -9,9 +9,13 @@ import json
 from json import JSONDecodeError
 from db_connector import Thread
 from pprint import pprint
+from selenium.webdriver.chrome.options import Options
 
 
 def retrieve_thread_info(course_url):
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
     driver = webdriver.Chrome('C:/chromedriver')
 
     # Sign in
