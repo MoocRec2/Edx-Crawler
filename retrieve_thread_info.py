@@ -5,6 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementClickInterceptedException
+import selenium
 import json
 from json import JSONDecodeError
 from db_connector import Thread
@@ -16,7 +17,7 @@ def retrieve_thread_info(course_url):
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
-    driver = webdriver.Chrome('C:/chromedriver')
+    driver = webdriver.Chrome('C:/chromedriver', options=options)
 
     # Sign in
     print('Authenticating')
@@ -70,7 +71,14 @@ def retrieve_thread_info(course_url):
 
     driver.get(discussion_url)
 
-    all_discussions_option = driver.find_element_by_id('all_discussions')
+    try:
+        all_discussions_option = driver.find_element_by_id('all_discussions')
+    except selenium.common.exceptions.NoSuchElementException:
+        print(
+            'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
+            'on the platform itself')
+        driver.quit()
+        quit()
     all_discussions_option = all_discussions_option.find_element_by_class_name('forum-nav-browse-title')
     all_discussions_option.click()
 
