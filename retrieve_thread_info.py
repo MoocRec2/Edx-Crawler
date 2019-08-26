@@ -14,13 +14,14 @@ from selenium.webdriver.chrome.options import Options
 
 
 def retrieve_thread_info(course_url):
+    print('-----Retrieving Thread Information-----')
+    print('Course URL:', course_url)
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     driver = webdriver.Chrome('C:/chromedriver', options=options)
 
     # Sign in
-    print('Authenticating')
     driver.get('https://courses.edx.org/login')
     email_input = driver.find_element_by_name("email")
     password_input = driver.find_element_by_name("password")
@@ -36,7 +37,7 @@ def retrieve_thread_info(course_url):
     for cookie in cookies:
         cookies_dict[cookie.get('name')] = cookie.get('value')
 
-    # Get Discussion URL from Course URL
+    # Derive Discussion URL from Course URL
     course_url_components = course_url.split('/')
     course_url_components.reverse()
     index = 0
@@ -51,34 +52,57 @@ def retrieve_thread_info(course_url):
     course_url_components.append('forum/?ajax=1&page=1&sort_key=comments&sort_order=desc')
     discussion_url = '/'.join(course_url_components)
 
-    print('Discussion URL =', discussion_url)
-
-    refresh_delay = 1
-
     def check_page_load(by, delay, element_id):
+        print('Checking for element, parameters:', by, delay, element_id)
         count = 0
         while count < 10:
             try:
-                my_elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((by, element_id)))
-                # print(element_id, "Page is ready!")
-                break
+                WebDriverWait(driver, delay).until(EC.presence_of_element_located((by, element_id)))
+                print('Element Found')
+                return True
             except TimeoutException:
-                # print(element_id, 'Page is not yet ready, checking again...')
                 pass
             count += 1
+        return False
 
-    check_page_load(By.ID, refresh_delay, 'my-courses')
+    refresh_delay = 1
+    elem_check_result = check_page_load(By.ID, refresh_delay, 'my-courses')
+    if not elem_check_result:
+        print('Element Not Found')
+        driver.quit()
+        quit()
 
     driver.get(discussion_url)
+    print('Discussion URL:', discussion_url)
 
+    # Checking whether discussions exist
+    print('Checking whether discussions exist')
     try:
         all_discussions_option = driver.find_element_by_id('all_discussions')
     except selenium.common.exceptions.NoSuchElementException:
+        print('Discussions not directly found')
         print(
             'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
             'on the platform itself')
-        driver.quit()
-        quit()
+        print('Attempting to enroll in course')
+        driver.get(course_url)
+        elem_check_result = check_page_load(By.CLASS_NAME, 2, 'enroll_btn')
+        if not elem_check_result:
+            print('Element Not Found')
+            print('Either the enrollment has expired or discussions do not exist')
+            driver.quit()
+            quit()
+
+        try:
+            enroll_btn = driver.find_element_by_class_name('enroll-btn')
+        except selenium.common.exceptions.NoSuchElementException:
+            quit()
+        enroll_btn.click()
+
+        check_page_load(By.CLASS_NAME, 1, 'my-courses')
+        # driver.quit()
+        print('Timeout')
+
     all_discussions_option = all_discussions_option.find_element_by_class_name('forum-nav-browse-title')
     all_discussions_option.click()
 
@@ -101,6 +125,10 @@ def retrieve_thread_info(course_url):
     results = Thread.upsert_threads(threads)
     if results:
         print('All Basic Thread Information has been saved to the database')
+    else:
+        print('Error Saving to Database, Program will now exit')
+        driver.quit()
+        quit()
     thread_list.extend(threads)
 
     num_of_pages = json_data['num_pages']
@@ -225,4 +253,4 @@ def retrieve_thread_info(course_url):
     if db_action_status:
         print('Detailed Thread Info. has been saved to the database')
 
-    driver.quit()
+    # driver.quit()
