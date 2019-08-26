@@ -100,6 +100,14 @@ class Course:
             return None
             pass
 
+    @staticmethod
+    def get_edx_courses():
+        try:
+            courses = database.courses.find({'platform': 'Edx'})
+            return courses
+        except:
+            print('An Error Occurred')
+
 
 class Subject:
 
