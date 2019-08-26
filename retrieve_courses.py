@@ -2,13 +2,17 @@ import authenticate
 import requests
 from pprint import pprint
 from db_connector import Course
+import time
 
 # from db_connector
+
+start_time = time.time()
 
 cookies = authenticate.get_cookies()
 
 # Start
-courses_url = 'https://www.edx.org/api/v1/catalog/search?selected_facets[]=subjects_exact:Computer Science'
+# courses_url = 'https://www.edx.org/api/v1/catalog/search?selected_facets[]=subjects_exact:Computer Science'
+courses_url = 'https://www.edx.org/api/v1/catalog/search'
 
 next_url = courses_url
 count = 1
@@ -30,3 +34,9 @@ while True:
     count += 1
 
 print('Retrieved {} Courses'.format(course_count))
+
+end_time = time.time()
+
+elapsed_time = end_time - start_time
+
+print('Elapsed Time:', elapsed_time)
