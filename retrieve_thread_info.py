@@ -105,6 +105,31 @@ def retrieve_thread_info(course_url, driver):
             print('Discussion Set:', discussion_set)
         except selenium.common.exceptions.NoSuchElementException:
             print('Discussions not directly found')
+            print(
+                'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
+                'on the platform itself')
+            print('Attempting to enroll in course')
+            driver.get(course_url)
+            elem_check_result = check_page_load(By.CLASS_NAME, 2, 'enroll_btn')
+            if not elem_check_result:
+                print('Element Not Found')
+                print('Either the enrollment has expired or discussions do not exist')
+                driver.quit()
+                quit()
+
+            try:
+                enroll_btn = driver.find_element_by_class_name('enroll-btn')
+            except selenium.common.exceptions.NoSuchElementException:
+                quit()
+            try:
+                enroll_btn.click()
+            except:
+                print('Enrollment Attempt Fail')
+                quit()
+
+            check_page_load(By.CLASS_NAME, 1, 'my-courses')
+            # driver.quit()
+            print('Timeout')
 
         if discussion_set > 10:
             break

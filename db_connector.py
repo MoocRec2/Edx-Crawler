@@ -121,8 +121,35 @@ class Course:
         except:
             print('An Error Occurred')
 
-    # @staticmethod
-    # def get_enrolled_courses
+    @staticmethod
+    def get_courses_alt():
+        courses_alt = [
+            'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/',  # Approx. 5 Threads
+            'https://courses.edx.org/courses/course-v1:UCSanDiegoX+DSE200x+1T2019a/course/',  # Approx. 180 Threads
+            'https://courses.edx.org/courses/course-v1:UPValenciaX+TGV201x.2+2T2019/course/',
+            'https://courses.edx.org/courses/course-v1:HarvardX+PH125.8x+2T2018/course/',  # Approx. 99 Threads
+            'https://courses.edx.org/courses/course-v1:HarvardX+CS50+X/course/',  # Discussions do not exist
+            'https://www.edx.org/course/introduction-to-kubernetes'
+        ]
+        courses_alt = [
+            'https://courses.edx.org/courses/course-v1:HKUSTx+ELEC3500.1x+2T2019/course/',
+            'https://courses.edx.org/courses/course-v1:BerkeleyX+GG101x+3T2019/course/',  # Error
+            'https://courses.edx.org/courses/course-v1:LinuxFoundationX+LFS158x+2T2019/course/',  # Error
+            'https://courses.edx.org/courses/course-v1:HarvardX+CS50+X/course/',  # Error
+            'https://courses.edx.org/courses/course-v1:MichiganX+py4e101x+1T2019/course/',
+            # ''
+        ]
+        try:
+            courses_al = list(database.courses.find({'platform': 0}))
+            length = courses_al.__len__()
+            return courses_alt
+        except ServerSelectionTimeoutError:
+            print('Error Connecting to Database')
+            return False
+        except:
+            print('An Error Occured - DB Connector')
+            return None
+            pass
 
 
 class Subject:
