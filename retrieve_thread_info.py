@@ -13,15 +13,23 @@ from pprint import pprint
 from selenium.webdriver.chrome.options import Options
 
 
-def retrieve_thread_info(course_url):
+def retrieve_thread_info(course_url, driver):
     print('-----Retrieving Thread Information-----')
     print('Course URL:', course_url)
+
+    # Authentication
+    # If driver is not None, it means that authentication has already been performed
+    # if driver is None:
+    if driver is not None:
+        driver.quit()
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
+    options.add_argument('log-level=3')
     driver = webdriver.Chrome('C:/chromedriver', options=options)
 
     # Sign in
+    print('Authenticating')
     driver.get('https://courses.edx.org/login')
     email_input = driver.find_element_by_name("email")
     password_input = driver.find_element_by_name("password")
@@ -29,6 +37,7 @@ def retrieve_thread_info(course_url):
     password_input.send_keys("nvidia1024")
     login_button = driver.find_element_by_class_name('login-button')
     login_button.click()
+    driver.maximize_window()
     print('Successfully Authenticated')
 
     # Get Cookies
@@ -36,6 +45,9 @@ def retrieve_thread_info(course_url):
     cookies_dict = {}
     for cookie in cookies:
         cookies_dict[cookie.get('name')] = cookie.get('value')
+    # else:
+    #     for cookie in previous_cookies:
+    #         driver.add_cookie(cookie)
 
     # Derive Discussion URL from Course URL
     course_url_components = course_url.split('/')
@@ -51,6 +63,8 @@ def retrieve_thread_info(course_url):
     course_url_components.reverse()
     course_url_components.append('forum/?ajax=1&page=1&sort_key=comments&sort_order=desc')
     discussion_url = '/'.join(course_url_components)
+
+    ''' Checks whether a page has loaded based on a specific element of the page '''
 
     def check_page_load(by, delay, element_id):
         print('Checking for element, parameters:', by, delay, element_id)
@@ -69,46 +83,51 @@ def retrieve_thread_info(course_url):
     elem_check_result = check_page_load(By.ID, refresh_delay, 'my-courses')
     if not elem_check_result:
         print('Element Not Found')
-        driver.quit()
-        quit()
-
+        return driver
     driver.get(discussion_url)
     print('Discussion URL:', discussion_url)
 
-    # Checking whether discussions exist
-    print('Checking whether discussions exist')
-    try:
-        all_discussions_option = driver.find_element_by_id('all_discussions')
-    except selenium.common.exceptions.NoSuchElementException:
-        print('Discussions not directly found')
-        print(
-            'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
-            'on the platform itself')
-        print('Attempting to enroll in course')
-        driver.get(course_url)
-        elem_check_result = check_page_load(By.CLASS_NAME, 2, 'enroll_btn')
-        if not elem_check_result:
-            print('Element Not Found')
-            print('Either the enrollment has expired or discussions do not exist')
-            driver.quit()
-            quit()
+    do_discussions_exist = False
 
+    '''
+    Extracting Forum Threads
+    While Loop - Loading Threads Categories to UI
+    Categories include General Discussions and Chapters
+    '''
+    discussion_set = 0
+    while not do_discussions_exist:
+        discussion_set += 1
+
+        # Checking whether discussions exist
+        print('Checking whether discussions exist')
         try:
-            enroll_btn = driver.find_element_by_class_name('enroll-btn')
+            all_discussions_option = driver.find_element_by_id('all_discussions')
+            print('Discussion Set:', discussion_set)
         except selenium.common.exceptions.NoSuchElementException:
-            quit()
-        enroll_btn.click()
+            print('Discussions not directly found')
 
-        check_page_load(By.CLASS_NAME, 1, 'my-courses')
-        # driver.quit()
-        print('Timeout')
+        if discussion_set > 10:
+            break
 
+    print('Discussions Exist, Proceeding to Extract...')
+
+    '''     Navigating into 'All Discussions'       '''
     all_discussions_option = all_discussions_option.find_element_by_class_name('forum-nav-browse-title')
-    all_discussions_option.click()
+    exc_count = 0
+    while True:
+        if exc_count > 10:
+            break
+        try:
+            all_discussions_option.click()
+            break
+        except ElementClickInterceptedException:
+            exc_count += 1
+            time.sleep(1)
 
     check_page_load(By.CLASS_NAME, 1, 'forum-nav-thread')
     thread_list = []
 
+    '''    Checking network requests for the 'Threads' Request    '''
     for request in driver.requests:
         if request.response:
             try:
@@ -127,40 +146,50 @@ def retrieve_thread_info(course_url):
         print('All Basic Thread Information has been saved to the database')
     else:
         print('Error Saving to Database, Program will now exit')
-        driver.quit()
-        quit()
+        return driver
     thread_list.extend(threads)
 
+    ''' Getting Amount of Data Available '''
     num_of_pages = json_data['num_pages']
     current_page = json_data['page']
+    print('No. of Pages:', num_of_pages)
 
     # print('Total No. of Pages:', num_of_pages)
     print('Retrieving Detailed Information')
     while current_page != num_of_pages and current_page <= 10:
-        # print('Current Page=', current_page)
+        print('Current Page:', current_page)
         del driver.requests
 
         forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
         threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
         thread_count = threads.__len__()
 
+        timeout_count = 0
         while True:
+            if timeout_count > 20:
+                print('Timeout')
+                break
             try:
                 load_more_btn = driver.find_element_by_class_name('forum-nav-load-more-link')
                 load_more_btn.click()
                 break
             except ElementClickInterceptedException:
+                print('load-more-btn click action intercepted, trying again...')
                 time.sleep(0.5)
-                pass
-
+                timeout_count += 1
+        timeout_count = 0
         while True:
+            if timeout_count > 10:
+                print('Timeout')
+                break
             forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
             threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
             new_thread_count = threads.__len__()
             if new_thread_count != thread_count:
                 break
-            # print('Threads not yet loaded, trying again...')
+            print('Threads not yet loaded, trying again...')
             time.sleep(1)
+            timeout_count += 1
 
         for request in driver.requests:
             try:
@@ -184,10 +213,11 @@ def retrieve_thread_info(course_url):
 
         try:
             current_page = json_data['page']
-            print('Current Page=', current_page)
         except:
             pprint(json_data)
             break
+
+        print('Current Page=', current_page)
 
     # print('All Threads Have Been Loaded to the UI, Iterations=', current_page)
 
@@ -253,4 +283,6 @@ def retrieve_thread_info(course_url):
     if db_action_status:
         print('Detailed Thread Info. has been saved to the database')
 
-    # driver.quit()
+    print('All Forum Data Retrieved')
+
+    return driver
