@@ -115,17 +115,17 @@ def retrieve_thread_info(course_url, driver):
                 print('Element Not Found')
                 print('Either the enrollment has expired or discussions do not exist')
                 driver.quit()
-                quit()
+                return
 
             try:
                 enroll_btn = driver.find_element_by_class_name('enroll-btn')
             except selenium.common.exceptions.NoSuchElementException:
-                quit()
+                return
             try:
                 enroll_btn.click()
             except:
                 print('Enrollment Attempt Fail')
-                quit()
+                return
 
             check_page_load(By.CLASS_NAME, 1, 'my-courses')
             # driver.quit()

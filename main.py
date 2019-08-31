@@ -34,7 +34,8 @@ tracking_array = list(range(num))
 for x in tracking_array:
     count += 1
     print('------ Course No.:', count, '------')
-    driver = retrieve_thread_info(courses[x % courses.__len__()], driver)
+    temp = x % courses.__len__()
+    driver = retrieve_thread_info(courses[temp], driver)
     is_authenticated = True
     print('------- Overall progress:', (count / total) * 100, '%')
 
