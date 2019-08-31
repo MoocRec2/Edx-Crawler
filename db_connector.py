@@ -1,8 +1,21 @@
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+import json
 
-# client = MongoClient('mongodb://forum_analyzer:admin123@ds157901.mlab.com:57901/moocrecv2')
-client = MongoClient('mongodb://localhost:27017/moocrecv2')
+platform_to_collection_mapping = {
+    'Edx': 'threads',
+    'FutureLearn': 'future_learn_threads',
+    'Coursera': 'coursera_threads'
+}
+
+with open('./db_credentials.json', 'r') as f:
+    db_credentials = json.load(f)
+
+connection_string = db_credentials['connectionString']
+
+# client = MongoClient('mongodb://api:backendapi1@ds157901.mlab.com:57901/moocrecv2?retryWrites=false')
+# client = MongoClient('mongodb://localhost:27017/moocrecv2')
+client = MongoClient(connection_string)
 
 database = client.moocrecv2
 
@@ -107,6 +120,9 @@ class Course:
             return courses
         except:
             print('An Error Occurred')
+
+    # @staticmethod
+    # def get_enrolled_courses
 
 
 class Subject:
