@@ -10,7 +10,7 @@ import time
     1 - Get Courses from Database
     2 - Iterate Courses and Get their Threads
     
-    Note: Courses retrieving logic exists in the retrieve_courses.py script
+    Note: Courses retrieving logic exists in the retrieve_courses.py script which is run separately
 '''
 
 start_time = time.time()
@@ -22,7 +22,7 @@ courses = db_connector.Course.get_courses_alt()
 total = courses_alt.__len__()
 print('No. of Edx Courses in Database: ', total)
 
-print('Enter No. of Courses to Process:')
+print('Enter No. of Courses to Extract Threads From:')
 num = input()
 num = int(num)
 
