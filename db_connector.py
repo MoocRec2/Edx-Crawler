@@ -8,16 +8,17 @@ platform_to_collection_mapping = {
     'Coursera': 'coursera_threads'
 }
 
-with open('./db_credentials.json', 'r') as f:
-    db_credentials = json.load(f)
-
-connection_string = db_credentials['connectionString']
+# with open('./db_credentials.json', 'r') as f:
+#     db_credentials = json.load(f)
+#
+# connection_string = db_credentials['connectionString']
 
 # client = MongoClient('mongodb://api:backendapi1@ds157901.mlab.com:57901/moocrecv2?retryWrites=false')
-# client = MongoClient('mongodb://localhost:27017/moocrecv2')
-client = MongoClient(connection_string)
+client = MongoClient('mongodb://localhost:27017/moocrecv2')
+# client = MongoClient(connection_string)
+# client = MongoClient('mongodb://user:password@52.66.18.67:27017/moocrec-v2')
 
-database = client.moocrecv2
+database = client['moocrec-v2']
 
 
 class Thread:
@@ -133,11 +134,17 @@ class Course:
         ]
         courses_alt = [
             'https://courses.edx.org/courses/course-v1:HKUSTx+ELEC3500.1x+2T2019/course/',
-            'https://courses.edx.org/courses/course-v1:BerkeleyX+GG101x+3T2019/course/',  # Error
-            'https://courses.edx.org/courses/course-v1:LinuxFoundationX+LFS158x+2T2019/course/',  # Error
-            'https://courses.edx.org/courses/course-v1:HarvardX+CS50+X/course/',  # Error
-            'https://courses.edx.org/courses/course-v1:MichiganX+py4e101x+1T2019/course/',
-            # ''
+            'https://courses.edx.org/courses/course-v1:BerkeleyX+GG101x+3T2019/course/',
+            'https://courses.edx.org/courses/course-v1:LinuxFoundationX+LFS158x+2T2019/course/',
+            'https://courses.edx.org/courses/course-v1:HarvardX+CS50+X/course/',
+            'https://courses.edx.org/courses/course-v1:MichiganX+py4e101x+1T2019/course/'
+        ]
+        courses_key = [
+            'course-v1:HKUSTx+ELEC3500.1x+2T2019',
+            'course-v1:BerkeleyX+GG101x+3T2019',
+            'course-v1:LinuxFoundationX+LFS158x+2T2019',
+            'course-v1:HarvardX+CS50+X',
+            'course-v1:MichiganX+py4e101x+1T2019',
         ]
         try:
             courses_al = list(database.courses.find({'platform': 0}))
