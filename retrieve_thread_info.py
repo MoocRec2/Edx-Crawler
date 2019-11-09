@@ -19,6 +19,7 @@ from selenium.webdriver.chrome.options import Options
 
 
 def retrieve_thread_info(course_url):
+    """ Retrieves the threads of a course and saves them in the database """
     options = Options()
     run_in_background = True
     if run_in_background:
@@ -72,11 +73,9 @@ def retrieve_thread_info(course_url):
         count = 0
         while count < 10:
             try:
-                my_elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((by, element_id)))
-                # print(element_id, "Page is ready!")
+                WebDriverWait(driver, delay).until(EC.presence_of_element_located((by, element_id)))
                 break
             except TimeoutException:
-                # print(element_id, 'Page is not yet ready, checking again...')
                 pass
             count += 1
 
@@ -131,15 +130,19 @@ def retrieve_thread_info(course_url):
     num_of_pages = json_data['num_pages']
     current_page = json_data['page']
 
+    # ----- Retrieving Detailed Information of Threads -----
     # print('Total No. of Pages:', num_of_pages)
     demo_page_count = 10
     print('Detailed Information, No. of Pages = ', num_of_pages)
     print('Detailed Information, Demo No. of Pages = ', demo_page_count)
     print('Retrieving Detailed Information: In Progress')
     while current_page != num_of_pages and current_page <= demo_page_count:
-        # print('Current Page=', current_page)
+        # The previous requests are cleared from history so that searching for the new requests is easier
         del driver.requests
 
+        ''' Only a subset of the threads titles are loaded to the UI
+        The rest of them are loaded (by the code below) by iteratively clicking the "Load More" button 
+        '''
         forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
         threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
         thread_count = threads.__len__()
@@ -258,3 +261,5 @@ def retrieve_thread_info(course_url):
         print('Saving Detailed Information: Error')
 
     driver.quit()
+
+    return True
