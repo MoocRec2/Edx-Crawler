@@ -15,8 +15,11 @@ from selenium.webdriver.chrome.options import Options
 
 def retrieve_thread_info(course_url):
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
+    run_in_background = True
+    if run_in_background:
+        options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+    print('Run In Background:', run_in_background)
     driver = webdriver.Chrome('C:/chromedriver', options=options)
 
     # Sign in
@@ -31,10 +34,11 @@ def retrieve_thread_info(course_url):
     print('Successfully Authenticated')
 
     # Get Cookies
-    cookies = driver.get_cookies()
-    cookies_dict = {}
-    for cookie in cookies:
-        cookies_dict[cookie.get('name')] = cookie.get('value')
+    # print('Getting Cookies')
+    # cookies = driver.get_cookies()
+    # cookies_dict = {}
+    # for cookie in cookies:
+    #     cookies_dict[cookie.get('name')] = cookie.get('value')
 
     # Get Discussion URL from Course URL
     course_url_components = course_url.split('/')
@@ -51,7 +55,7 @@ def retrieve_thread_info(course_url):
     course_url_components.append('forum/?ajax=1&page=1&sort_key=comments&sort_order=desc')
     discussion_url = '/'.join(course_url_components)
 
-    print('Discussion URL =', discussion_url)
+    print('Generated Discussion URL (from Course URL) =', discussion_url)
 
     refresh_delay = 1
 
@@ -101,6 +105,9 @@ def retrieve_thread_info(course_url):
     results = Thread.upsert_threads(threads)
     if results:
         print('All Basic Thread Information has been saved to the database')
+    else:
+        print('Exiting Program')
+        quit(-1)
     thread_list.extend(threads)
 
     num_of_pages = json_data['num_pages']
