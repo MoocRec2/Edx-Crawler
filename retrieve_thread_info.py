@@ -13,6 +13,11 @@ from pprint import pprint
 from selenium.webdriver.chrome.options import Options
 
 
+# import logging
+
+# logging.basicConfig(level=logging.DEBUG)
+
+
 def retrieve_thread_info(course_url):
     options = Options()
     run_in_background = True
@@ -23,7 +28,7 @@ def retrieve_thread_info(course_url):
     driver = webdriver.Chrome('C:/chromedriver', options=options)
 
     # Sign in
-    print('Authenticating')
+    print('Authentication: In Progress')
     driver.get('https://courses.edx.org/login')
     email_input = driver.find_element_by_name("email")
     password_input = driver.find_element_by_name("password")
@@ -31,7 +36,7 @@ def retrieve_thread_info(course_url):
     password_input.send_keys("nvidia1024")
     login_button = driver.find_element_by_class_name('login-button')
     login_button.click()
-    print('Successfully Authenticated')
+    print('Authentication: Finished')
 
     # Get Cookies
     # print('Getting Cookies')
@@ -40,6 +45,8 @@ def retrieve_thread_info(course_url):
     # for cookie in cookies:
     #     cookies_dict[cookie.get('name')] = cookie.get('value')
 
+    print('Generating Discussion URL from Course URL: In Progress')
+    print('Course URL:', course_url)
     # Get Discussion URL from Course URL
     course_url_components = course_url.split('/')
     course_url_components.reverse()
@@ -55,11 +62,13 @@ def retrieve_thread_info(course_url):
     course_url_components.append('forum/?ajax=1&page=1&sort_key=comments&sort_order=desc')
     discussion_url = '/'.join(course_url_components)
 
-    print('Generated Discussion URL (from Course URL) =', discussion_url)
+    print('Generating Discussion URL from Course URL: Finished')
+    print('Discussion URL:', discussion_url)
 
     refresh_delay = 1
 
     def check_page_load(by, delay, element_id):
+        print('Waiting for the page (or elements within the page) to finish loading...')
         count = 0
         while count < 10:
             try:
@@ -73,10 +82,13 @@ def retrieve_thread_info(course_url):
 
     check_page_load(By.ID, refresh_delay, 'my-courses')
 
+    print('Navigating to Discussion URL')
     driver.get(discussion_url)
 
     try:
+        print('Searching for the Discussions Section: In Progress')
         all_discussions_option = driver.find_element_by_id('all_discussions')
+        print('Searching for the Discussions Section: Finished')
     except selenium.common.exceptions.NoSuchElementException:
         print(
             'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
@@ -89,6 +101,7 @@ def retrieve_thread_info(course_url):
     check_page_load(By.CLASS_NAME, 1, 'forum-nav-thread')
     thread_list = []
 
+    print('Extracting Basic Information of the Threads: In Progress')
     for request in driver.requests:
         if request.response:
             try:
@@ -101,28 +114,36 @@ def retrieve_thread_info(course_url):
             except:
                 print('Unhandled Exception')
 
+    print('Extracting Basic Information of the Threads: Finished')
     threads = json_data['discussion_data']
+
+    print('Saving the Information: In Progress')
     results = Thread.upsert_threads(threads)
     if results:
-        print('All Basic Thread Information has been saved to the database')
+        print('Saving the Information: Finished')
     else:
+        print('Saving the Information: Error')
         print('Exiting Program')
         quit(-1)
+
     thread_list.extend(threads)
 
     num_of_pages = json_data['num_pages']
     current_page = json_data['page']
 
     # print('Total No. of Pages:', num_of_pages)
-    print('Retrieving Detailed Information')
-    while current_page != num_of_pages and current_page <= 10:
+    demo_page_count = 10
+    print('Detailed Information, No. of Pages = ', num_of_pages)
+    print('Detailed Information, Demo No. of Pages = ', demo_page_count)
+    print('Retrieving Detailed Information: In Progress')
+    while current_page != num_of_pages and current_page <= demo_page_count:
         # print('Current Page=', current_page)
         del driver.requests
 
         forum_thread_list = driver.find_element_by_class_name('forum-nav-thread-list')
         threads = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
         thread_count = threads.__len__()
-
+        print('Retrieving Detailed Information: In Progress, Loading Details to UI')
         while True:
             try:
                 load_more_btn = driver.find_element_by_class_name('forum-nav-load-more-link')
@@ -163,7 +184,7 @@ def retrieve_thread_info(course_url):
 
         try:
             current_page = json_data['page']
-            print('Current Page=', current_page)
+            print('Retrieving Detailed Information: In Progress, Current Page:', current_page)
         except:
             pprint(json_data)
             break
@@ -174,6 +195,7 @@ def retrieve_thread_info(course_url):
     thread_elems = forum_thread_list.find_elements_by_class_name('forum-nav-thread')
 
     print('Starting to collect detailed thread information')
+    print('Retrieving Detailed Information: In Progress, Extracting Information from the UI')
     # Iterating through the Elements
     new_thread_info = []
     # print('Thread Element Count =', thread_elems.__len__())
@@ -227,9 +249,12 @@ def retrieve_thread_info(course_url):
                 print('Exception Occurred, parsing as JSON')
         demo_count += 1
 
-    print('No. of Threads which contain comments:', new_thread_info.__len__())
+    print('Retrieving Detailed Information: Finished')
+    print('Saving Detailed Information: In Progress')
     db_action_status = Thread.upsert_threads(new_thread_info)
     if db_action_status:
-        print('Detailed Thread Info. has been saved to the database')
+        print('Saving Detailed Information: Finished')
+    else:
+        print('Saving Detailed Information: Error')
 
     driver.quit()
