@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+import copy
 
 # client = MongoClient('mongodb://forum_analyzer:admin123@ds157901.mlab.com:57901/moocrecv2')
 client = MongoClient('mongodb://localhost:27017/moocrecv2')
@@ -67,6 +68,26 @@ class Thread:
             return []
 
 
+class db_client:
+    class courses:
+        @staticmethod
+        def find(x):
+            courses = [
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'},
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:UCSanDiegoX+DSE200x+1T2019a/course/'},
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:UPValenciaX+TGV201x.2+2T2019/course/'},
+                {
+                    'marketing_url': 'https://courses.edx.org/courses/course-v1:UWashingtonX+PM-IT-002x+2T2019/course/'},
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:Microsoft+DAT236x+1T2019a/course/'},
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:UCSanDiegoX+DSE200x+1T2019a/course/'},
+                {'marketing_url': 'https://courses.edx.org/courses/course-v1:UPValenciaX+TGV201x.2+2T2019/course/'},
+            ]
+            new = []
+            for x in range(3500):
+                new.append(copy.deepcopy(courses[x % courses.__len__()]))
+            return new
+
+
 class Course:
 
     @staticmethod
@@ -94,7 +115,7 @@ class Course:
     @staticmethod
     def get_courses():
         try:
-            courses = database.courses.find({'platform': 0})
+            courses = db_client.courses.find({'platform': 'Edx'})
             return courses
         except:
             return None

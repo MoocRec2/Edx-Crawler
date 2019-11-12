@@ -33,7 +33,8 @@ def retrieve_thread_info(course_url):
     driver.get('https://courses.edx.org/login')
     email_input = driver.find_element_by_name("email")
     password_input = driver.find_element_by_name("password")
-    email_input.send_keys("smrbasil4@gmail.com")
+    # email_input.send_keys("smrbasil4@gmail.com")
+    email_input.send_keys("smrbasil4@hotmail.com")
     password_input.send_keys("nvidia1024")
     login_button = driver.find_element_by_class_name('login-button')
     login_button.click()
@@ -93,9 +94,15 @@ def retrieve_thread_info(course_url):
             'Potential problems may be that the course is not enrolled to or that the discussion does not exist '
             'on the platform itself')
         driver.quit()
-        quit()
+        # quit()
+        return
     all_discussions_option = all_discussions_option.find_element_by_class_name('forum-nav-browse-title')
-    all_discussions_option.click()
+    while True:
+        try:
+            all_discussions_option.click()
+            break
+        except ElementClickInterceptedException:
+            time.sleep(2)
 
     check_page_load(By.CLASS_NAME, 1, 'forum-nav-thread')
     thread_list = []
